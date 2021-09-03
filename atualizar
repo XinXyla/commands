@@ -1,0 +1,101 @@
+{
+  "name": "atualizar",
+  "permissions": "NONE",
+  "restriction": "4",
+  "_id": "EiHKM",
+  "actions": [
+    {
+      "info": "0",
+      "infoIndex": "1",
+      "storage": "1",
+      "varName": "gatilho",
+      "name": "Store Command Params"
+    },
+    {
+      "condition": "0",
+      "comparison": "0",
+      "value": "0",
+      "iftrue": "0",
+      "iftrueVal": "",
+      "iffalse": "3",
+      "iffalseVal": "1",
+      "name": "Check Parameters"
+    },
+    {
+      "text": "comandos",
+      "text2": "",
+      "text3": "",
+      "info": "0",
+      "storage": "1",
+      "varName": "gatilho",
+      "name": "Replace Text"
+    },
+    {
+      "date": "${new Date}",
+      "info": "5",
+      "storage": "1",
+      "varName": "ano",
+      "name": "Store Date Info"
+    },
+    {
+      "date": "${new Date}",
+      "info": "8",
+      "storage": "1",
+      "varName": "mês",
+      "name": "Store Date Info"
+    },
+    {
+      "date": "${new Date}",
+      "info": "4",
+      "storage": "1",
+      "varName": "dia",
+      "name": "Store Date Info"
+    },
+    {
+      "date": "${new Date}",
+      "info": "7",
+      "storage": "1",
+      "varName": "hora",
+      "name": "Store Date Info"
+    },
+    {
+      "date": "${new Date}",
+      "info": "9",
+      "storage": "1",
+      "varName": "min",
+      "name": "Store Date Info"
+    },
+    {
+      "text": "${tempVars(\"dia\")}/${tempVars(\"mês\")}/${tempVars(\"ano\")} ás ${tempVars(\"hora\")}:${tempVars(\"min\")}",
+      "text2": "",
+      "text3": "",
+      "info": "0",
+      "storage": "1",
+      "varName": "data",
+      "name": "Replace Text"
+    },
+    {
+      "dataName": "atu2",
+      "changeType": "0",
+      "value": "tempVars(\"data\")",
+      "name": "Control Global Data"
+    },
+    {
+      "behavior": "0",
+      "interpretation": "1",
+      "code": "const fs = require('fs');\nconst path = require('path');  \n\nconst commandName = tempVars(\"gatilho\");\n\nconst filePath = path.join(process.cwd(), 'data', 'commands.json');\nconst filePath2 = path.join(process.cwd(), 'data', 'events.json');\n\n(()=>{\n   \n   if(fs.existsSync(filePath2)){\n\n      let content = fs.readFileSync(filePath2)  \n      try {\n         if(typeof content !== 'string' && content.toString) content = content.toString();\n         Files.data.events = JSON.parse(Files.decrypt(content));\n      } catch(e) {\n         console.error(e)\n         return;\n      }\n   }\n\n  \n   if(fs.existsSync(filePath)){\n   \n      let content = fs.readFileSync(filePath)  \n      let data;\n      try {\n         if(typeof content !== 'string' && content.toString) content = content.toString();\n         data = JSON.parse(Files.decrypt(content));\n      } catch(e) {\n         console.error(e)\n         return;\n      }\n       \n      if(commandName ===  undefined) return;\n  \n      function reloadEvents(){\n         msg.channel.send(`Atualizando ${Files.data.events.length} eventos...`)\n\n         for(const event of client.eventNames()) {  \n            client.removeAllListeners(event);  \n         }\n\n         Bot.$evts = {}; \n\n         Bot.setupBot();\n         Bot.reformatEvents();\n         Bot.initEvents();\n\n         if(Bot.$evts[\"3\"]) {\n            Events.setupIntervals(bot);\n         }\n      }\n\n      function reloadCommands(){\n         msg.channel.send(`Atualizando ${data.length} comandos...`)\n\n         Files.data.commands = data;\n\n         Bot.$cmds = {}; \n         Bot.$icds = []; \n         Bot.$regx = []; \n         Bot.$anym = [];\n      \n         Bot.reformatCommands();\n      }\n\n      if(commandName === \"*\"){\n\n         try {\n            reloadCommands();\n            reloadEvents();           \n         } catch (error) {\n            console.error(error)\n            return msg.channel.send(`Ocorreu um problema ao atualizar tudo`); \n         }\n\n         return msg.channel.send(`Todos os dados do bot foram atualizados!`); \n      } \n\n      if(commandName === \"tudo\"){\n\n        try {\n           reloadCommands();\n           reloadEvents();           \n        } catch (error) {\n           console.error(error)\n           return msg.channel.send(`Ocorreu um problema ao atualizar tudo`); \n        }\n\n        return msg.channel.send(`Todos os dados do bot foram atualizados!`); \n     } \n\n      if(commandName === \"eventos\"){\n         try {\n            reloadEvents();\n         } catch (error) {\n            console.error(error)\n            return msg.channel.send(`Ocorreu um problema ao atualizar todos os eventos`); \n         }\n\n         return msg.channel.send(`Todos os ${Files.data.events.length} eventos foram atualizados!`); \n      }\n      if(commandName === \"comandos\"){\n      \n         try {\n            reloadCommands();\n         } catch (error) {\n            console.error(error)\n            return msg.channel.send(`Ocorreu um problema ao atualizar todos os comandos!`); \n         }\n\n         return msg.channel.send(`Todos os ${data.length} comandos foram atualizados!`); \n      }\n\n\n\n      let found = data.filter(c=>c && c.name.indexOf(commandName) == 0)\n      \n      if(found.length === 0) return msg.channel.send(`O comando '${commandName}' não foi encontrado`); \n\n      if(found.length > 1) return msg.channel.send(`${found.length} resultados, você quis dizer: ${found.map(c=>c.name).join(\", \")}? \\nExecute o comando novamente`)\n    \n         const com = data.find(c=>c && c.name === found[0].name)\n\n         Bot._caseSensitive = Boolean(Files.data.settings.case === 'true');  \n         if(com) {\n            switch(com.comType) {\n               case '1':\n                  delete Bot.$icds.find(c=>c && c.name === found)\n                  Bot.$icds.push(com);\n                  break;\n               case '2':\n                  delete Bot.$regx.find(c=>c && c.name === found)\n                  Bot.$regx.push(com);\n                  break;\n               case '3':\n                  delete Bot.$anym.find(c=>c && c.name === found)\n                  Bot.$anym.push(com);\n                  break;\n               default:\n                  if(Bot._caseSensitive) {\n                     Bot.$cmds[com.name] = com;\n                     if(com._aliases) {\n                        const aliases = com._aliases;\n                        for(let j = 0; j < aliases.length; j++) {\n                           Bot.$cmds[aliases[j]] = com;\n                        }\n                     }\n                  } else {\n                     Bot.$cmds[com.name.toLowerCase()] = com;\n                     if(com._aliases) {\n                        const aliases = com._aliases;\n                        for(let j = 0; j < aliases.length; j++) {\n                           Bot.$cmds[aliases[j].toLowerCase()] = com;\n                        }\n                     }\n                  }\n                  break;\n            }\n\n            msg.channel.send(`Comando '${com.name}' foi atualizado!`)\n         }\n      \n   }\n})();\n\n",
+      "storage": "0",
+      "varName": "all_data",
+      "name": "Run Script"
+    },
+    {
+      "behavior": "3",
+      "name": "Run Action Sequence Once"
+    }
+  ],
+  "comType": "0",
+  "_aliases": [
+    "atu",
+    "atumeg"
+  ]
+}
